@@ -1,7 +1,5 @@
-# Note: In production, download CRDs from:
-# https://raw.githubusercontent.com/vmware-tanzu/velero/v{{ velero_version }}/config/crd/v1/bases/
-# For simplicity, we rely on velero CLI or helm to install CRDs
-# This template is a placeholder when using manifest-based installation
+# Velero CRDs for v{{ velero_version }}
+# These are minimal CRDs with x-kubernetes-preserve-unknown-fields: true
 
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
@@ -82,6 +80,197 @@ spec:
   scope: Namespaced
   versions:
     - name: v1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          x-kubernetes-preserve-unknown-fields: true
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: volumesnapshotlocations.velero.io
+spec:
+  group: velero.io
+  names:
+    kind: VolumeSnapshotLocation
+    listKind: VolumeSnapshotLocationList
+    plural: volumesnapshotlocations
+    singular: volumesnapshotlocation
+    shortNames:
+      - vsl
+  scope: Namespaced
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          x-kubernetes-preserve-unknown-fields: true
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: podvolumebackups.velero.io
+spec:
+  group: velero.io
+  names:
+    kind: PodVolumeBackup
+    listKind: PodVolumeBackupList
+    plural: podvolumebackups
+    singular: podvolumebackup
+  scope: Namespaced
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          x-kubernetes-preserve-unknown-fields: true
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: podvolumerestores.velero.io
+spec:
+  group: velero.io
+  names:
+    kind: PodVolumeRestore
+    listKind: PodVolumeRestoreList
+    plural: podvolumerestores
+    singular: podvolumerestore
+  scope: Namespaced
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          x-kubernetes-preserve-unknown-fields: true
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: backuprepositories.velero.io
+spec:
+  group: velero.io
+  names:
+    kind: BackupRepository
+    listKind: BackupRepositoryList
+    plural: backuprepositories
+    singular: backuprepository
+  scope: Namespaced
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          x-kubernetes-preserve-unknown-fields: true
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: deletebackuprequests.velero.io
+spec:
+  group: velero.io
+  names:
+    kind: DeleteBackupRequest
+    listKind: DeleteBackupRequestList
+    plural: deletebackuprequests
+    singular: deletebackuprequest
+  scope: Namespaced
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          x-kubernetes-preserve-unknown-fields: true
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: downloadrequests.velero.io
+spec:
+  group: velero.io
+  names:
+    kind: DownloadRequest
+    listKind: DownloadRequestList
+    plural: downloadrequests
+    singular: downloadrequest
+  scope: Namespaced
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          x-kubernetes-preserve-unknown-fields: true
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: serverstatusrequests.velero.io
+spec:
+  group: velero.io
+  names:
+    kind: ServerStatusRequest
+    listKind: ServerStatusRequestList
+    plural: serverstatusrequests
+    singular: serverstatusrequest
+  scope: Namespaced
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          x-kubernetes-preserve-unknown-fields: true
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: datauploads.velero.io
+spec:
+  group: velero.io
+  names:
+    kind: DataUpload
+    listKind: DataUploadList
+    plural: datauploads
+    singular: dataupload
+  scope: Namespaced
+  versions:
+    - name: v2alpha1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          x-kubernetes-preserve-unknown-fields: true
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: datadownloads.velero.io
+spec:
+  group: velero.io
+  names:
+    kind: DataDownload
+    listKind: DataDownloadList
+    plural: datadownloads
+    singular: datadownload
+  scope: Namespaced
+  versions:
+    - name: v2alpha1
       served: true
       storage: true
       schema:

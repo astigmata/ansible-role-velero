@@ -1,0 +1,8 @@
+---
+- name: Destroy
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: No destroy needed for default driver
+      ansible.builtin.debug:
+        msg: "Nothing to destroy - using default driver with localhost"

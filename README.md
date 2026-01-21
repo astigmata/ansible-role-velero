@@ -1,5 +1,7 @@
 # Ansible Role: Velero
 
+[![CI](https://github.com/astigmata/ansible-role-velero/actions/workflows/ci.yml/badge.svg)](https://github.com/astigmata/ansible-role-velero/actions/workflows/ci.yml)
+
 Deploys Velero backup and disaster recovery solution on Kubernetes.
 
 ## Description
