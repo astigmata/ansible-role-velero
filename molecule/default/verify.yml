@@ -1,0 +1,62 @@
+---
+- name: Verify
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Check Velero namespace exists
+      kubernetes.core.k8s_info:
+        api_version: v1
+        kind: Namespace
+        name: velero
+      register: velero_ns
+      failed_when: velero_ns.resources | length == 0
+
+    - name: Check Velero deployment exists and is ready
+      kubernetes.core.k8s_info:
+        api_version: apps/v1
+        kind: Deployment
+        name: velero
+        namespace: velero
+      register: velero_deployment
+      failed_when:
+        - velero_deployment.resources | length == 0
+        - (velero_deployment.resources[0].status.availableReplicas | default(0)) < 1
+
+    - name: Check cloud-credentials secret exists
+      kubernetes.core.k8s_info:
+        api_version: v1
+        kind: Secret
+        name: cloud-credentials
+        namespace: velero
+      register: velero_secret
+      failed_when: velero_secret.resources | length == 0
+
+    - name: Check BackupStorageLocation exists
+      kubernetes.core.k8s_info:
+        api_version: velero.io/v1
+        kind: BackupStorageLocation
+        name: default
+        namespace: velero
+      register: backup_location
+      failed_when: backup_location.resources | length == 0
+
+    - name: Verify BackupStorageLocation configuration
+      ansible.builtin.assert:
+        that:
+          - backup_location.resources[0].spec.provider == "aws"
+          - backup_location.resources[0].spec.objectStorage.bucket == "velero"
+          - backup_location.resources[0].spec.config.s3Url == "http://minio.minio.svc:9000"
+        fail_msg: "BackupStorageLocation configuration is incorrect"
+
+    - name: Check VolumeSnapshotLocation exists
+      kubernetes.core.k8s_info:
+        api_version: velero.io/v1
+        kind: VolumeSnapshotLocation
+        name: default
+        namespace: velero
+      register: snapshot_location
+      failed_when: snapshot_location.resources | length == 0
+
+    - name: Display Velero deployment status
+      ansible.builtin.debug:
+        msg: "Velero deployment is running with {{ velero_deployment.resources[0].status.availableReplicas }} replica(s)"

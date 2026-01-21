@@ -1,0 +1,20 @@
+---
+profile: production
+
+exclude_paths:
+  - .github/
+  - .cache/
+  - .venv/
+  - venv/
+
+skip_list:
+  - yaml[line-length]
+  - name[template]
+
+warn_list:
+  - experimental
+  - command-instead-of-module
+
+offline: false
+
+use_default_rules: true

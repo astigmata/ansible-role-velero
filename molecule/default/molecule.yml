@@ -1,0 +1,43 @@
+---
+dependency:
+  name: galaxy
+  options:
+    requirements-file: requirements.yml
+
+driver:
+  name: default
+
+platforms:
+  - name: localhost
+    groups:
+      - k8s
+
+provisioner:
+  name: ansible
+  playbooks:
+    prepare: prepare.yml
+    converge: converge.yml
+    cleanup: cleanup.yml
+  inventory:
+    host_vars:
+      localhost:
+        ansible_connection: local
+        ansible_python_interpreter: "{{ ansible_playbook_python }}"
+  config_options:
+    defaults:
+      callbacks_enabled: profile_tasks
+
+verifier:
+  name: ansible
+
+scenario:
+  name: default
+  test_sequence:
+    - dependency
+    - cleanup
+    - syntax
+    - prepare
+    - converge
+    - idempotence
+    - verify
+    - cleanup
