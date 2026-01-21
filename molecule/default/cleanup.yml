@@ -1,0 +1,29 @@
+---
+- name: Cleanup
+  hosts: localhost
+  gather_facts: false
+  vars:
+    kind_cluster_name: "{{ lookup('env', 'KIND_CLUSTER_NAME') | default('velero-test', true) }}"
+    ci_environment: "{{ lookup('env', 'CI') | default(false, true) }}"
+  tasks:
+    - name: Delete Velero namespace
+      kubernetes.core.k8s:
+        state: absent
+        api_version: v1
+        kind: Namespace
+        name: velero
+      ignore_errors: true
+
+    - name: Delete MinIO namespace
+      kubernetes.core.k8s:
+        state: absent
+        api_version: v1
+        kind: Namespace
+        name: minio
+      ignore_errors: true
+
+    - name: Delete kind cluster
+      ansible.builtin.command: "kind delete cluster --name {{ kind_cluster_name }}"
+      changed_when: true
+      ignore_errors: true
+      when: not ci_environment

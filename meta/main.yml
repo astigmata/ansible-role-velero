@@ -1,0 +1,37 @@
+---
+galaxy_info:
+  role_name: velero
+  namespace: astigmata
+  author: astigmata
+  description: Deploy Velero backup and disaster recovery solution on Kubernetes
+  company: ""
+  license: MIT
+  min_ansible_version: "2.14"
+
+  platforms:
+    - name: Debian
+      versions:
+        - bullseye
+        - bookworm
+    - name: Ubuntu
+      versions:
+        - focal
+        - jammy
+        - noble
+    - name: EL
+      versions:
+        - "8"
+        - "9"
+
+  galaxy_tags:
+    - kubernetes
+    - k8s
+    - velero
+    - backup
+    - disaster_recovery
+    - cloud
+    - aws
+    - s3
+    - minio
+
+dependencies: []

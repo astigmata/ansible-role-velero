@@ -1,0 +1,144 @@
+---
+- name: Prepare
+  hosts: localhost
+  gather_facts: false
+  vars:
+    kind_cluster_name: "{{ lookup('env', 'KIND_CLUSTER_NAME') | default('velero-test', true) }}"
+  tasks:
+    - name: Check if kind cluster exists
+      ansible.builtin.command: kind get clusters
+      register: kind_clusters
+      changed_when: false
+      failed_when: false
+
+    - name: Create kind cluster for testing
+      ansible.builtin.command: "kind create cluster --name {{ kind_cluster_name }} --wait 120s"
+      when: kind_cluster_name not in kind_clusters.stdout
+      register: kind_create
+      changed_when: kind_create.rc == 0
+
+    - name: Wait for cluster to be ready
+      kubernetes.core.k8s_info:
+        api_version: v1
+        kind: Node
+      register: nodes
+      until: nodes.resources | length > 0
+      retries: 30
+      delay: 10
+
+    - name: Create MinIO namespace
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: minio
+
+    - name: Deploy MinIO for testing
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: minio
+            namespace: minio
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app: minio
+            template:
+              metadata:
+                labels:
+                  app: minio
+              spec:
+                containers:
+                  - name: minio
+                    image: minio/minio:latest
+                    args:
+                      - server
+                      - /data
+                      - --console-address
+                      - ":9001"
+                    env:
+                      - name: MINIO_ROOT_USER
+                        value: minioadmin
+                      - name: MINIO_ROOT_PASSWORD
+                        value: minioadmin
+                    ports:
+                      - containerPort: 9000
+                      - containerPort: 9001
+                    readinessProbe:
+                      httpGet:
+                        path: /minio/health/ready
+                        port: 9000
+                      initialDelaySeconds: 10
+                      periodSeconds: 5
+
+    - name: Create MinIO service
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: minio
+            namespace: minio
+          spec:
+            selector:
+              app: minio
+            ports:
+              - name: api
+                port: 9000
+                targetPort: 9000
+              - name: console
+                port: 9001
+                targetPort: 9001
+
+    - name: Wait for MinIO to be ready
+      kubernetes.core.k8s_info:
+        api_version: apps/v1
+        kind: Deployment
+        name: minio
+        namespace: minio
+      register: minio_deployment
+      until: (minio_deployment.resources[0].status.availableReplicas | default(0)) >= 1
+      retries: 30
+      delay: 10
+
+    - name: Create velero bucket in MinIO
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: batch/v1
+          kind: Job
+          metadata:
+            name: create-velero-bucket
+            namespace: minio
+          spec:
+            ttlSecondsAfterFinished: 60
+            template:
+              spec:
+                restartPolicy: OnFailure
+                containers:
+                  - name: mc
+                    image: minio/mc:latest
+                    command:
+                      - /bin/sh
+                      - -c
+                      - |
+                        mc alias set minio http://minio:9000 minioadmin minioadmin
+                        mc mb --ignore-existing minio/velero
+
+    - name: Wait for bucket creation job
+      kubernetes.core.k8s_info:
+        api_version: batch/v1
+        kind: Job
+        name: create-velero-bucket
+        namespace: minio
+      register: bucket_job
+      until: (bucket_job.resources[0].status.succeeded | default(0)) >= 1
+      retries: 30
+      delay: 5
