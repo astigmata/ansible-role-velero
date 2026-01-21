@@ -42,8 +42,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          path: ansible-role-velero
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -66,9 +64,7 @@ jobs:
           ansible-galaxy collection install kubernetes.core community.general
 
       - name: Run Molecule tests
-        run: |
-          cd ansible-role-velero
-          molecule test
+        run: molecule test
         env:
           PY_COLORS: "1"
           ANSIBLE_FORCE_COLOR: "1"

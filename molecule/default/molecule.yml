@@ -26,6 +26,7 @@ provisioner:
   config_options:
     defaults:
       callbacks_enabled: profile_tasks
+      roles_path: "${MOLECULE_PROJECT_DIRECTORY}/..:${MOLECULE_EPHEMERAL_DIRECTORY}/roles"
 
 verifier:
   name: ansible

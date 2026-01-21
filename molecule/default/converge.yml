@@ -10,5 +10,7 @@
     s3_region: "minio"
     s3_force_path_style: true
     velero_use_volume_snapshots: false
-  roles:
-    - role: astigmata.velero
+  tasks:
+    - name: Include velero role
+      ansible.builtin.include_role:
+        name: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}"
