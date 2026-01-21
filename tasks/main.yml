@@ -91,6 +91,14 @@
         - schedules.velero.io
         - backupstoragelocations.velero.io
         - volumesnapshotlocations.velero.io
+        - podvolumebackups.velero.io
+        - podvolumerestores.velero.io
+        - backuprepositories.velero.io
+        - deletebackuprequests.velero.io
+        - downloadrequests.velero.io
+        - serverstatusrequests.velero.io
+        - datauploads.velero.io
+        - datadownloads.velero.io
 
     - name: Apply Velero RBAC and Deployment
       kubernetes.core.k8s:
