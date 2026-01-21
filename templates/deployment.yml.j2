@@ -17,6 +17,7 @@ spec:
       containers:
         - name: velero
           image: {{ velero_image }}
+          imagePullPolicy: IfNotPresent
           command:
             - /velero
           args:
@@ -42,14 +43,15 @@ spec:
               mountPath: /credentials
           resources:
             requests:
-              cpu: 500m
+              cpu: 100m
               memory: 128Mi
             limits:
-              cpu: 1000m
+              cpu: 500m
               memory: 512Mi
       initContainers:
         - name: velero-plugin-for-aws
           image: {{ velero_aws_plugin_image }}
+          imagePullPolicy: IfNotPresent
           volumeMounts:
             - name: plugins
               mountPath: /target

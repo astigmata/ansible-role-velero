@@ -105,16 +105,35 @@
         state: present
         definition: "{{ lookup('template', 'backupstoragelocation.yml.j2') | from_yaml_all }}"
 
-- name: Wait for Velero to be ready
-  kubernetes.core.k8s_info:
-    api_version: apps/v1
-    kind: Deployment
-    name: velero
-    namespace: "{{ velero_namespace }}"
-  register: velero_deployment
-  until: velero_deployment.resources[0].status.availableReplicas | default(0) >= 1
-  retries: 30
-  delay: 10
+- name: Wait for Velero deployment
+  block:
+    - name: Wait for Velero to be ready
+      kubernetes.core.k8s_info:
+        api_version: apps/v1
+        kind: Deployment
+        name: velero
+        namespace: "{{ velero_namespace }}"
+      register: velero_deployment
+      until: velero_deployment.resources[0].status.availableReplicas | default(0) >= 1
+      retries: 30
+      delay: 10
+  rescue:
+    - name: Get Velero pods for debugging
+      kubernetes.core.k8s_info:
+        api_version: v1
+        kind: Pod
+        namespace: "{{ velero_namespace }}"
+        label_selectors:
+          - app.kubernetes.io/name=velero
+      register: velero_pods
+
+    - name: Show Velero pods status
+      ansible.builtin.debug:
+        msg: "{{ velero_pods.resources | map(attribute='status') | list }}"
+
+    - name: Fail with debug info
+      ansible.builtin.fail:
+        msg: "Velero deployment failed to become ready. Check pod status above."
 
 - name: Create VolumeSnapshotLocation
   kubernetes.core.k8s:
