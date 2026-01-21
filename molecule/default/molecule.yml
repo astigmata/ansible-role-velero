@@ -18,6 +18,7 @@ provisioner:
     prepare: prepare.yml
     converge: converge.yml
     cleanup: cleanup.yml
+    destroy: destroy.yml
   inventory:
     host_vars:
       localhost:
