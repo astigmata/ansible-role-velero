@@ -1,0 +1,24 @@
+apiVersion: velero.io/v1
+kind: BackupStorageLocation
+metadata:
+  name: default
+  namespace: {{ velero_namespace }}
+spec:
+  provider: aws
+  objectStorage:
+    bucket: {{ s3_bucket }}
+  config:
+    region: {{ s3_region }}
+    s3ForcePathStyle: "{{ s3_force_path_style | string | lower }}"
+    s3Url: {{ s3_endpoint }}
+  default: true
+---
+apiVersion: velero.io/v1
+kind: VolumeSnapshotLocation
+metadata:
+  name: default
+  namespace: {{ velero_namespace }}
+spec:
+  provider: aws
+  config:
+    region: {{ s3_region }}

@@ -1,0 +1,18 @@
+---
+velero_namespace: velero
+velero_version: "1.17.2"
+velero_aws_plugin_version: "1.13.2"
+velero_image: "velero/velero:v{{ velero_version }}"
+velero_aws_plugin_image: "velero/velero-plugin-for-aws:v{{ velero_aws_plugin_version }}"
+
+# S3 storage settings (can be MinIO, AWS S3, or any S3-compatible storage)
+s3_endpoint: ""
+s3_access_key: ""
+s3_secret_key: ""
+s3_bucket: "velero"
+s3_region: "us-east-1"
+s3_force_path_style: true
+
+# Backup settings
+velero_backup_ttl: "720h"
+velero_use_volume_snapshots: false

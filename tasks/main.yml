@@ -1,0 +1,134 @@
+---
+- name: Validate required S3 configuration
+  ansible.builtin.assert:
+    that:
+      - s3_endpoint != ""
+      - s3_access_key != ""
+      - s3_secret_key != ""
+      - s3_bucket != ""
+    fail_msg: "S3 configuration is required. Please set s3_endpoint, s3_access_key, s3_secret_key, and s3_bucket."
+
+- name: Create Velero namespace
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ velero_namespace }}"
+
+- name: Create Velero credentials secret
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: cloud-credentials
+        namespace: "{{ velero_namespace }}"
+      type: Opaque
+      stringData:
+        cloud: |
+          [default]
+          aws_access_key_id={{ s3_access_key }}
+          aws_secret_access_key={{ s3_secret_key }}
+
+- name: Check if Velero CLI is available
+  ansible.builtin.command: which velero
+  register: velero_cli_check
+  changed_when: false
+  failed_when: false
+
+- name: Install Velero using CLI
+  when: velero_cli_check.rc == 0
+  block:
+    - name: Check if Velero is already installed
+      kubernetes.core.k8s_info:
+        api_version: apps/v1
+        kind: Deployment
+        name: velero
+        namespace: "{{ velero_namespace }}"
+      register: velero_deployment_check
+
+    - name: Install Velero with velero CLI
+      ansible.builtin.command: >
+        velero install
+        --provider aws
+        --plugins {{ velero_aws_plugin_image }}
+        --bucket {{ s3_bucket }}
+        --secret-file /dev/stdin
+        --backup-location-config region={{ s3_region }},s3ForcePathStyle={{ s3_force_path_style | lower }},s3Url={{ s3_endpoint }}
+        --use-volume-snapshots={{ velero_use_volume_snapshots | lower }}
+        --namespace {{ velero_namespace }}
+      args:
+        stdin: |
+          [default]
+          aws_access_key_id={{ s3_access_key }}
+          aws_secret_access_key={{ s3_secret_key }}
+      when: velero_deployment_check.resources | length == 0
+
+- name: Install Velero using manifests
+  when: velero_cli_check.rc != 0
+  block:
+    - name: Apply Velero CRDs and resources
+      kubernetes.core.k8s:
+        state: present
+        definition: "{{ lookup('template', item) | from_yaml_all }}"
+      loop:
+        - crds.yml.j2
+        - rbac.yml.j2
+        - deployment.yml.j2
+        - backupstoragelocation.yml.j2
+
+- name: Wait for Velero to be ready
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    name: velero
+    namespace: "{{ velero_namespace }}"
+  register: velero_deployment
+  until: velero_deployment.resources[0].status.availableReplicas | default(0) >= 1
+  retries: 30
+  delay: 10
+
+- name: Create VolumeSnapshotLocation
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: velero.io/v1
+      kind: VolumeSnapshotLocation
+      metadata:
+        name: default
+        namespace: "{{ velero_namespace }}"
+      spec:
+        provider: aws
+        config:
+          region: "{{ s3_region }}"
+
+- name: Update BackupStorageLocation
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: velero.io/v1
+      kind: BackupStorageLocation
+      metadata:
+        name: default
+        namespace: "{{ velero_namespace }}"
+      spec:
+        provider: aws
+        objectStorage:
+          bucket: "{{ s3_bucket }}"
+        config:
+          region: "{{ s3_region }}"
+          s3ForcePathStyle: "{{ s3_force_path_style | string | lower }}"
+          s3Url: "{{ s3_endpoint }}"
+        default: true
+
+- name: Verify backup location is available
+  ansible.builtin.command: velero backup-location get -n {{ velero_namespace }}
+  register: backup_location
+  changed_when: false
+  when: velero_cli_check.rc == 0
+  retries: 6
+  delay: 10
+  until: "'Available' in backup_location.stdout"
