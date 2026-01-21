@@ -28,7 +28,7 @@ galaxy_info:
     - k8s
     - velero
     - backup
-    - disaster_recovery
+    - disasterrecovery
     - cloud
     - aws
     - s3
