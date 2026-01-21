@@ -12,7 +12,7 @@
         api_version: v1
         kind: Namespace
         name: velero
-      ignore_errors: true
+      failed_when: false
 
     - name: Delete MinIO namespace
       kubernetes.core.k8s:
@@ -20,10 +20,11 @@
         api_version: v1
         kind: Namespace
         name: minio
-      ignore_errors: true
+      failed_when: false
 
     - name: Delete kind cluster
       ansible.builtin.command: "kind delete cluster --name {{ kind_cluster_name }}"
-      changed_when: true
-      ignore_errors: true
+      register: kind_delete
+      changed_when: kind_delete.rc == 0
+      failed_when: false
       when: not ci_environment

@@ -66,6 +66,7 @@
           aws_access_key_id={{ s3_access_key }}
           aws_secret_access_key={{ s3_secret_key }}
       when: velero_deployment_check.resources | length == 0
+      changed_when: true
 
 - name: Install Velero using manifests
   when: velero_cli_check.rc != 0

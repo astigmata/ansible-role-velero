@@ -11,4 +11,4 @@
     s3_force_path_style: true
     velero_use_volume_snapshots: false
   roles:
-    - role: arnaud.velero
+    - role: astigmata.velero
