@@ -71,15 +71,39 @@
 - name: Install Velero using manifests
   when: velero_cli_check.rc != 0
   block:
-    - name: Apply Velero CRDs and resources
+    - name: Apply Velero CRDs
+      kubernetes.core.k8s:
+        state: present
+        definition: "{{ lookup('template', 'crds.yml.j2') | from_yaml_all }}"
+
+    - name: Wait for Velero CRDs to be established
+      kubernetes.core.k8s_info:
+        api_version: apiextensions.k8s.io/v1
+        kind: CustomResourceDefinition
+        name: "{{ item }}"
+      register: crd_check
+      until: crd_check.resources | length > 0 and (crd_check.resources[0].status.conditions | selectattr('type', 'equalto', 'Established') | selectattr('status', 'equalto', 'True') | list | length > 0)
+      retries: 30
+      delay: 2
+      loop:
+        - backups.velero.io
+        - restores.velero.io
+        - schedules.velero.io
+        - backupstoragelocations.velero.io
+        - volumesnapshotlocations.velero.io
+
+    - name: Apply Velero RBAC and Deployment
       kubernetes.core.k8s:
         state: present
         definition: "{{ lookup('template', item) | from_yaml_all }}"
       loop:
-        - crds.yml.j2
         - rbac.yml.j2
         - deployment.yml.j2
-        - backupstoragelocation.yml.j2
+
+    - name: Apply Velero BackupStorageLocation
+      kubernetes.core.k8s:
+        state: present
+        definition: "{{ lookup('template', 'backupstoragelocation.yml.j2') | from_yaml_all }}"
 
 - name: Wait for Velero to be ready
   kubernetes.core.k8s_info:
